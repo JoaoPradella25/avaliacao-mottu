@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mottu - Avaliação da Filial</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;background:#000;color:#fff;min-height:100vh;padding:0 0 60px}
+  .header{background:#000;padding:18px 16px 14px;text-align:center;border-bottom:3px solid #00b131}
+  .header img{height:36px;object-fit:contain}
+  .header p{color:#aaa;font-size:13px;margin-top:6px}
+  .progress-bar{background:#222;height:8px}
+  .progress-fill{background:#00b131;height:8px;transition:width .4s}
+  .step{display:none;padding:20px 16px;max-width:560px;margin:0 auto}
+  .step.active{display:block}
+  .step-label{font-size:12px;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+  .step-title{font-size:20px;font-weight:700;margin-bottom:6px;line-height:1.3;color:#fff}
+  .step-sub{font-size:14px;color:#aaa;margin-bottom:20px}
+  .search-wrap{position:relative;margin-bottom:8px}
+  .search-wrap input{width:100%;padding:14px 16px;font-size:16px;border:2px solid #333;border-radius:12px;outline:none;background:#111;color:#fff}
+  .search-wrap input::placeholder{color:#555}
+  .search-wrap input:focus{border-color:#00b131}
+  .dropdown{background:#111;border:2px solid #00b131;border-radius:12px;max-height:220px;overflow-y:auto;position:absolute;width:100%;z-index:10;top:calc(100% + 4px);display:none}
+  .dropdown.open{display:block}
+  .dropdown-item{padding:13px 16px;font-size:15px;cursor:pointer;border-bottom:1px solid #222;color:#fff}
+  .dropdown-item:last-child{border-bottom:none}
+  .dropdown-item:hover,.dropdown-item.highlighted{background:#0a2e14;color:#00b131}
+  .selected-tag{display:inline-flex;align-items:center;gap:8px;background:#00b131;color:#000;border-radius:20px;padding:8px 14px;font-size:14px;font-weight:700;margin-top:8px}
+  .nps-grid{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin:8px 0 16px}
+  .nps-btn{aspect-ratio:1;border:2px solid #333;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;background:#111;color:#fff;transition:all .15s;display:flex;align-items:center;justify-content:center}
+  .nps-btn:hover{border-color:#00b131;background:#0a2e14;color:#00b131}
+  .nps-btn.selected{background:#00b131;border-color:#00b131;color:#000}
+  .nps-labels{display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:20px}
+  .option-card{border:2px solid #333;border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer;background:#111;transition:all .15s;display:flex;align-items:center;gap:12px;font-size:15px;color:#fff}
+  .option-card:hover{border-color:#00b131;background:#0a2e14}
+  .option-card.selected{border-color:#00b131;background:#0a2e14}
+  .option-icon{font-size:22px;flex-shrink:0;width:32px;text-align:center}
+  .option-text{line-height:1.4}
+  textarea{width:100%;padding:14px;font-size:15px;border:2px solid #333;border-radius:12px;min-height:110px;resize:none;outline:none;font-family:Arial,sans-serif;background:#111;color:#fff}
+  textarea::placeholder{color:#555}
+  textarea:focus{border-color:#00b131}
+  .btn-next{background:#00b131;color:#000;border:none;border-radius:14px;padding:16px;width:100%;font-size:17px;font-weight:700;cursor:pointer;margin-top:12px;transition:opacity .15s}
+  .btn-next:disabled{opacity:.3;cursor:default}
+  .btn-next:not(:disabled):hover{opacity:.85}
+  .btn-back{background:transparent;color:#666;border:none;font-size:14px;cursor:pointer;margin-top:10px;display:block;width:100%;text-align:center;padding:8px}
+  .btn-back:hover{color:#aaa}
+  .char-count{font-size:12px;color:#555;text-align:right;margin-top:4px}
+  .success-screen{text-align:center;padding:40px 20px;display:none}
+  .success-screen.active{display:block}
+  .success-icon{font-size:64px;margin-bottom:16px}
+  .success-title{font-size:24px;font-weight:700;color:#00b131;margin-bottom:8px}
+  .success-sub{font-size:15px;color:#aaa;line-height:1.6}
+  @media(max-width:400px){.nps-grid{gap:3px}.nps-btn{font-size:13px;border-radius:8px}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@700&display=swap" rel="stylesheet">
+  <span style="font-family:'Barlow Semi Condensed',Arial,sans-serif;font-weight:700;font-size:36px;color:#fff;letter-spacing:1px">Mottu</span>
+  <p>Sua opinião melhora o atendimento pra todo mundo 🏍️</p>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="prog" style="width:10%"></div></div>
+
+<!-- STEP 1: Filial -->
+<div class="step active" id="s1">
+  <p class="step-label">Pergunta 1 de 10</p>
+  <p class="step-title">Qual filial você visitou? 📍</p>
+  <p class="step-sub">Digite o nome da cidade ou filial</p>
+  <div class="search-wrap">
+    <input type="text" id="filialInput" placeholder="Ex: Fortaleza, Manaus..." autocomplete="off" oninput="filterFiliais()" onfocus="showDropdown()" />
+    <div class="dropdown" id="filialDropdown"></div>
+  </div>
+  <div id="filialTag"></div>
+  <button class="btn-next" id="btn1" disabled onclick="goTo(2)">Continuar →</button>
+</div>
+
+<!-- STEP 2: NPS Área -->
+<div class="step" id="s2">
+  <p class="step-label">Pergunta 2 de 10</p>
+  <p class="step-title">Como estava a <u>área do cliente</u>? ⭐</p>
+  <p class="step-sub">Dê uma nota de 0 a 10</p>
+  <div class="nps-grid" id="nps"></div>
+  <div class="nps-labels"><span>👎 Péssima</span><span>👍 Ótima</span></div>
+  <button class="btn-next" id="btn2" disabled onclick="goTo(3)">Continuar →</button>
+  <button class="btn-back" onclick="goTo(1)">← Voltar</button>
+</div>
+
+<!-- STEP 3: Atendimento -->
+<div class="step" id="s3">
+  <p class="step-label">Pergunta 3 de 10</p>
+  <p class="step-title">Como foi o <u>atendimento inicial</u>? 🙋</p>
+  <p class="step-sub">Escolha o que aconteceu com você</p>
+  <div class="option-card" onclick="selectOption(this,'atend','totem')">
+    <span class="option-icon">📟</span>
+    <span class="option-text">Tinha um <strong>totem fixo</strong> e eu mesmo dei entrada no atendimento</span>
+  </div>
+  <div class="option-card" onclick="selectOption(this,'atend','tablet')">
+    <span class="option-icon">📱</span>
+    <span class="option-text">O <strong>atendente veio com tablet</strong> na mão e abriu o atendimento</span>
+  </div>
+  <button class="btn-next" id="btn3" disabled onclick="goTo(4)">Continuar →</button>
+  <button class="btn-back" onclick="goTo(2)">← Voltar</button>
+</div>
+
+<!-- STEP 4: Banheiro -->
+<div class="step" id="s4">
+  <p class="step-label">Pergunta 4 de 10</p>
+  <p class="step-title">Como estava o <u>banheiro</u>? 🚻</p>
+  <div class="option-card" onclick="selectOption(this,'banheiro','limpo')">
+    <span class="option-icon">✅</span>
+    <span class="option-text"><strong>Limpo</strong> e em boas condições de uso</span>
+  </div>
+  <div class="option-card" onclick="selectOption(this,'banheiro','sujo')">
+    <span class="option-icon">❌</span>
+    <span class="option-text"><strong>Sujo</strong> e em péssimas condições</span>
+  </div>
+  <button class="btn-next" id="btn4" disabled onclick="goTo(5)">Continuar →</button>
+  <button class="btn-back" onclick="goTo(3)">← Voltar</button>
+</div>
+
+<!-- STEP 5: Café -->
+<div class="step" id="s5">
+  <p class="step-label">Pergunta 5 de 10</p>
+  <p class="step-title">Tinha <u>café</u> disponível? ☕</p>
+  <div class="option-card" onclick="selectOption(this,'cafe','sim')">
+    <span class="option-icon">☕</span>
+    <span class="option-text"><strong>Sim</strong>, tinha café</span>
+  </div>
+  <div class="option-card" onclick="selectOption(this,'cafe','nao')">
+    <span class="option-icon">🚫</span>
+    <span class="option-text"><strong>Não</strong> tinha café</span>
+  </div>
+  <button class="btn-next" id="btn5" disabled onclick="goTo(6)">Continuar →</button>
+  <button class="btn-back" onclick="goTo(4)">← Voltar</button>
+</div>
+
+<!-- STEP 6: Água -->
+<div class="step" id="s6">
+  <p class="step-label">Pergunta 6 de 10</p>
+  <p class="step-title">Tinha <u>água gelada</u> pra beber? 💧</p>
+  <div class="option-card" onclick="selectOption(this,'agua','sim')">
+    <span class="option-icon">💧</span>
+    <span class="option-text"><strong>Sim</strong>, tinha água gelada</span>
+  </div>
+  <div class="option-card" onclick="selectOption(this,'agua','nao')">
+    <span class="option-icon">😓</span>
+    <span class="option-text"><strong>Não</strong> tinha água, fiquei com sede</span>
+  </div>
+  <button class="btn-next" id="btn6" disabled onclick="goTo(7)">Continuar →</button>
+  <button class="btn-back" onclick="goTo(5)">← Voltar</button>
+</div>
+
+<!-- STEP 7: Ventilação -->
+<div class="step" id="s7">
+  <p class="step-label">Pergunta 7 de 10</p>
+  <p class="step-title">Como estava a <u>temperatura</u> da área de espera? 🌡️</p>
+  <div class="option-card" onclick="selectOption(this,'ventilacao','bom')">
+    <span class="option-icon">💨</span>
+    <span class="option-text"><strong>Agradável</strong> — tinha ventilador ou ar-condicionado</span>
+  </div>
+  <div class="option-card" onclick="selectOption(this,'ventilacao','quente')">
+    <span class="option-icon">🥵</span>
+    <span class="option-text"><strong>Muito quente</strong> — não tinha ventilação nenhuma</span>
+  </div>
+  <button class="btn-next" id="btn7" disabled onclick="goTo(8)">Continuar →</button>
+  <button class="btn-back" onclick="goTo(6)">← Voltar</button>
+</div>
+
+<!-- STEP 8: Microondas -->
+<div class="step" id="s8">
+  <p class="step-label">Pergunta 8 de 10</p>
+  <p class="step-title">Tinha <u>microondas</u> na área de espera? 📦</p>
+  <div class="option-card" onclick="selectOption(this,'microondas','sim')">
+    <span class="option-icon">✅</span>
+    <span class="option-text"><strong>Sim</strong>, tinha microondas</span>
+  </div>
+  <div class="option-card" onclick="selectOption(this,'microondas','nao')">
+    <span class="option-icon">❌</span>
+    <span class="option-text"><strong>Não</strong> tinha microondas</span>
+  </div>
+  <div class="option-card" onclick="selectOption(this,'microondas','naoreparei')">
+    <span class="option-icon">🤷</span>
+    <span class="option-text">Não reparei / Não lembro</span>
+  </div>
+  <button class="btn-next" id="btn8" disabled onclick="goTo(9)">Continuar →</button>
+  <button class="btn-back" onclick="goTo(7)">← Voltar</button>
+</div>
+
+<!-- STEP 9: Bancos -->
+<div class="step" id="s9">
+  <p class="step-label">Pergunta 9 de 10</p>
+  <p class="step-title">Como foram os <u>bancos de espera</u>? 🪑</p>
+  <div class="option-card" onclick="selectOption(this,'bancos','otimos')">
+    <span class="option-icon">😊</span>
+    <span class="option-text">Tinha bancos e <strong>gostei da área</strong></span>
+  </div>
+  <div class="option-card" onclick="selectOption(this,'bancos','desconfortaveis')">
+    <span class="option-icon">😐</span>
+    <span class="option-text">Tinha bancos, mas <strong>muito desconfortáveis</strong></span>
+  </div>
+  <div class="option-card" onclick="selectOption(this,'bancos','nao')">
+    <span class="option-icon">😟</span>
+    <span class="option-text"><strong>Não tinha</strong> bancos de espera</span>
+  </div>
+  <button class="btn-next" id="btn9" disabled onclick="goTo(10)">Continuar →</button>
+  <button class="btn-back" onclick="goTo(8)">← Voltar</button>
+</div>
+
+<!-- STEP 10: Comentário -->
+<div class="step" id="s10">
+  <p class="step-label">Pergunta 10 de 10</p>
+  <p class="step-title">Tem algo que a gente pode melhorar? ✍️</p>
+  <p class="step-sub">Escreve o que quiser — pode ser curto ou detalhado</p>
+  <textarea id="comentario" placeholder="Ex: A área estava muito quente, poderiam ter mais ventiladores..." maxlength="500" oninput="updateChar()"></textarea>
+  <div class="char-count"><span id="charN">0</span>/500</div>
+  <button class="btn-next" onclick="enviar()">Enviar avaliação ✓</button>
+  <button class="btn-back" onclick="goTo(9)">← Voltar</button>
+</div>
+
+<!-- SUCCESS -->
+<div class="success-screen" id="success">
+  <span style="font-family:'Barlow Semi Condensed',Arial,sans-serif;font-weight:700;font-size:32px;color:#fff;letter-spacing:1px;display:block;margin-bottom:16px">Mottu</span>
+  <div class="success-icon">🎉</div>
+  <div class="success-title">Obrigado pela avaliação!</div>
+  <div class="success-sub">Sua opinião chegou pra gente e vai ajudar a melhorar o atendimento em todas as filiais.<br><br>Pode fechar essa página. 😊</div>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFEw6jFl4uPnUIwT0sp-XfbQjO2774cMyEXewbKXiZr3yJBYE_CvZlqB7QZ-28VSmd/exec";
+
+const filiais = ["Mottu Alagoinhas","Mottu Ananindeua","Mottu Anapolis","Mottu Aparecida de Goiânia","Mottu Aracaju","Mottu Araçatuba","Mottu Arapiraca","Mottu Barcarena","Mottu Jacarepaguá","Mottu Bauru","Mottu Belem","Mottu Belo Horizonte","Mottu Boa Vista","Mottu Brasilia","Mottu Butantã","Mottu Cabo Frio","Mottu Camaçari","Mottu Campina Grande","Mottu Campinas","Mottu Campo Grande","Mottu Campos dos Goytacazes","Mottu Caruaru","Mottu Caxias do Sul","Mottu Contagem","Mottu Criciúma","Mottu Cuiabá","Mottu Curitiba","Mottu Divinópolis","Mottu Fátima","Mottu Feira de Santana","Mottu Florianopolis","Mottu Fortaleza","Mottu Fortaleza 2","Mottu Franca","Mottu Goiania","Mottu Governador Valadares","Mottu Guarulhos","Mottu Imperatriz","Mottu Interlagos","Mottu Ipatinga","Mottu Ipiranga","Mottu Itabuna","Mottu Itajaí","Mottu Jandira","Mottu João Pessoa","Mottu João Pessoa 2","Mottu Joinville","Mottu Juazeiro","Mottu Juazeiro do Norte","Mottu Juiz De Fora","Mottu Jundiaí","Mottu Limão","Mottu Linhares","Mottu Londrina","Mottu Macaé","Mottu Macapá","Mottu Maceio","Mottu Manaus","Mottu Marabá","Mottu Maracanau","Mottu Maringa","Mottu Mogi das Cruzes","Mottu Montes Claros","Mottu Mossoró","Mottu Natal","Mottu Niterói","Mottu Olinda","Mottu Ourinhos","Mottu Palmas","Mottu Parauapebas","Mottu Parnaíba","Mottu Pelotas","Mottu Picarreia","Mottu Piracicaba","Mottu Porto Alegre","Mottu Porto Velho","Mottu Praia Grande","Mottu Presidente Prudente","Mottu Recife","Mottu Ribeirao Preto","Mottu Rio Branco","Mottu Rio Verde","Mottu Rondonopolis","Mottu Salvador","Mottu Santarem","Mottu Santos","Mottu Sao Bernardo","Mottu Sao Carlos","Mottu Sao José do Rio Preto","Mottu Sao José dos Campos","Mottu Sao Luís","Mottu Sao Miguel","Mottu Sobral","Mottu Sorocaba","Mottu Taboão","Mottu Teresina","Mottu Teresópolis","Mottu Vila Isabel","Mottu Uberaba","Mottu Uberlandia","Mottu Vila Velha","Mottu Serra","Mottu Vitória da Conquista","Mottu Vitória de Santo Antão","Mottu Parnamirim","Mottu Barreiras","Mottu Bragança","Mottu Teixeira de Freitas","Mottu Porto Seguro","Mottu Ipojuca","Mottu Crato","Mottu Patos","Mottu Avaré","Mottu Blumenau","Mottu Botucatu","Mottu Cascavel","Mottu Chapecó","Mottu Colatina","Mottu Itapipoca","Mottu Marília","Mottu Passo Fundo","Mottu Petrolina","Mottu Pindamonhangaba","Mottu Sinop","Mottu Teófilo Otoni","Mottu Valparaiso","Mottu Volta Redonda","Mottu Ponta Grossa","Mottu Aracati","Mottu Itaquera","Mottu Sete Lagoas","Mottu Castanhal","Mottu Caxias/MA","Mottu Jequie","Mottu Volta Redonda / RJ","Mottu Vitória / ES","Mottu Várzea Grande / MT","Mottu Santa Maria / RS","Outra"];
+
+const answers = {};
+
+const npsEl = document.getElementById('nps');
+for(let i=0;i<=10;i++){
+  const b = document.createElement('button');
+  b.className='nps-btn';
+  b.textContent=i;
+  b.onclick=()=>selectNPS(i,b);
+  npsEl.appendChild(b);
+}
+
+function selectNPS(val,btn){
+  document.querySelectorAll('.nps-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  answers.nps=val;
+  document.getElementById('btn2').disabled=false;
+}
+
+function filterFiliais(){
+  const q=document.getElementById('filialInput').value.toLowerCase().trim();
+  const dd=document.getElementById('filialDropdown');
+  if(!q){dd.classList.remove('open');return;}
+  const matches=filiais.filter(f=>f.toLowerCase().includes(q)).slice(0,8);
+  if(!matches.length){dd.classList.remove('open');return;}
+  dd.innerHTML=matches.map(f=>`<div class="dropdown-item" onclick="pickFilial('${f.replace(/'/g,"\\'")}')">📍 ${f}</div>`).join('');
+  dd.classList.add('open');
+}
+
+function showDropdown(){
+  if(document.getElementById('filialInput').value.trim()) filterFiliais();
+}
+
+function pickFilial(name){
+  answers.filial=name;
+  document.getElementById('filialInput').value=name;
+  document.getElementById('filialDropdown').classList.remove('open');
+  document.getElementById('filialTag').innerHTML=`<div class="selected-tag">📍 ${name} <span style="cursor:pointer;opacity:.7;margin-left:4px" onclick="clearFilial()">✕</span></div>`;
+  document.getElementById('btn1').disabled=false;
+}
+
+function clearFilial(){
+  answers.filial='';
+  document.getElementById('filialInput').value='';
+  document.getElementById('filialTag').innerHTML='';
+  document.getElementById('btn1').disabled=true;
+}
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.search-wrap')) document.getElementById('filialDropdown').classList.remove('open');
+});
+
+function selectOption(el,key,val){
+  const step=el.closest('.step');
+  step.querySelectorAll('.option-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  answers[key]=val;
+  const n=step.id.replace('s','');
+  document.getElementById('btn'+n).disabled=false;
+}
+
+function goTo(n){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s'+n).classList.add('active');
+  document.getElementById('prog').style.width=(n/10*100)+'%';
+  window.scrollTo(0,0);
+}
+
+function updateChar(){
+  document.getElementById('charN').textContent=document.getElementById('comentario').value.length;
+}
+
+function enviar(){
+  answers.comentario=document.getElementById('comentario').value;
+  answers.timestamp=new Date().toLocaleString('pt-BR');
+  const row=[answers.timestamp,answers.filial||'',answers.nps!=null?answers.nps:'',answers.atend||'',answers.banheiro||'',answers.cafe||'',answers.agua||'',answers.ventilacao||'',answers.microondas||'',answers.bancos||'',answers.comentario||''];
+  if(SCRIPT_URL){
+    fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({row}),headers:{'Content-Type':'application/json'}}).catch(()=>{});
+  } else {
+    console.log("Respostas:",row);
+  }
+  document.querySelectorAll('.step').forEach(s=>s.style.display='none');
+  document.getElementById('prog').style.width='100%';
+  document.getElementById('success').classList.add('active');
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
